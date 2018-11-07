@@ -14,7 +14,7 @@ const Int_t br=Ntdc-16+1;
 const Int_t tl=Ntdc-16+2;
 const Int_t tr=Ntdc-16+3;
 const Double_t adjadcto=1500.0;//value to ADJust ADC TO
-Double_t nscint = 1.50; // index of refraction of scintillator
+Double_t nscint = 1.30; // index of refraction of scintillator
 Double_t vn = 2.997E08/nscint;
 Double_t dscint = 0.105; // distance between scintillators in metres
 Double_t t_fullscale = 140.0E-09; // full scale TDC range in seconds
@@ -62,6 +62,7 @@ void luterplots(Int_t nrun) {
 	TH1F *hbpos = new TH1F("hbpos","Bottom Position",xposbin,-1.0*xpos_range,xpos_range); //Histogram for bottom scintillator 
 	//htheta = new TH1F("htheta","Angle (Degrees)",10*bin,-100.5,100.5); //Histogram for incidence angle
 	TH1F *htheta = new TH1F("htheta","Angle (Degrees)",201,-100.5,100.5); //Histogram for incidence angle
+	TH1F *htheta2 = new TH1F("htheta2","Angle (Degrees)",201,-100.5,100.5); //Histogram for simulated incidence angle
 	TH1F *hadctop = new TH1F("hadctop","Top Energy Dep",bin,0,8500);
 	TH1F *hadcbot = new TH1F("hadcbot","Bottom Energy Dep",bin,0,8500);
 
@@ -173,13 +174,24 @@ void luterplots(Int_t nrun) {
 			Double_t bdiff = (tbl-tbr)/2.0;
 			Double_t xtop = tdiff*t_convert*vn;
 			Double_t xbottom = bdiff*t_convert*vn;
-			rnd = r.Gaus(0.0,2.0);
+			rnd = r.Gaus(0.0,1.5);
+			Double_t rnd_top_pos = r.Gaus(0.0,0.07);
+			Double_t rnd_bottom_pos = r.Gaus(0.0,0.07);
+			Double_t rnd2 = r.Gaus(0.0,0.0);
+			Double_t rndxt = r.Uniform(-0.10,0.10);
+			Double_t rndyt = r.Uniform(-0.15,0.15);
+			Double_t rndrt = sqrt(rndxt*rndxt+rndyt*rndyt)+rnd_top_pos;
+			Double_t rndxb = r.Uniform(-0.10,0.10);
+			Double_t rndyb = r.Uniform(-0.15,0.15);
+			Double_t rndrb = sqrt(rndxb*rndxb+rndyb*rndyb)+rnd_bottom_pos;
 			Double_t theta = rtod*atan((xbottom-xtop)/dscint)+rnd;
+			Double_t theta2 = rtod*atan((rndrb-rndrt)/dscint);
 
 			if(xtop > -0.2 && xtop < 0.2 && xbottom > -0.2 && xbottom < 0.2) {
 				htpos->Fill(xtop);
 				hbpos->Fill(xbottom);
 		    		if(abs(theta)<=85.0) htheta->Fill(theta);
+		    		if(abs(theta2)<=85.0) htheta2->Fill(theta2);
 			}
 
 			htopLeftvXpos->Fill(xtop,etl); 
@@ -263,6 +275,8 @@ void luterplots(Int_t nrun) {
 	hbpos->Draw();
 	tdcpos->cd(3);
 	htheta->Draw();
+	htheta2->SetLineColor(kRed);
+	htheta2->Draw("SAME");
     	//TF1 *myfit = new TF1("myfit","[0]*pow(cos(x/180.0*3.14159),2)",-60,60);
     	//myfit->SetParameter(0,140);
 	//htheta->Fit("myfit","QRW");
