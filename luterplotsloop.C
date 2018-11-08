@@ -23,8 +23,15 @@ const Double_t thetahigh = 100.5;
 
 //=============================================Method starts here for plotting===================================
 
-void luterplots(Int_t nrun, Double_t nscint=1.50) {
+void luterplotsloop(Int_t nrun) {
 
+	const Int_t npoints = 100;
+	Double_t chi2array[npoints];
+	Double_t nscintarray[npoints];
+
+	for (Int_t kkk = 0; kkk < npoints; kkk++){
+        Double_t nscint = 1.40+kkk*0.20/(npoints-1);
+	nscintarray[kkk]=nscint;
         Double_t vn = 2.997E08/nscint;
 	Double_t resolution = 0.0232*nscint*nscint-0.1061*nscint+0.1617;
         Double_t granularity = t_convert*vn/2.0;
@@ -114,7 +121,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
     //cout << "Starting adc and tdc calibration loop ... " << endl;
     for (int ie = 0; ie < nevents_in_file; ie++) {
 		troot->GetEntry(ie);
-		if(ie%1000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;
+		if(ie%1000==0.0&&ie!=0){//cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;
 		}
 		for( int i = 0; i < Ntdc ; i++) {//Start TDC filling loop
                        if(adc[i] < 3600){
@@ -129,11 +136,11 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 		}//End ADC for loop
 	}
 
-	TCanvas *c1 = new TCanvas("c1","tdc raw fitter",75,75,600,600);
-   	c1->Divide(2,2);
+	//TCanvas *c1 = new TCanvas("c1","tdc raw fitter",75,75,600,600);
+   	//c1->Divide(2,2);
    	for ( int i = bl; i <= tr ; i++) {
-      	c1->cd(i-bl+1);		
-		htdcraw[i]->Draw();
+      		//c1->cd(i-bl+1);		
+		//htdcraw[i]->Draw();
 //the next 7 lines allow us to automatically set the fitting range
 		int highbin=5;		
 		for(int ii=0;ii<=bin;ii++){
@@ -153,7 +160,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 	for (int ie = 0; ie < nevents_in_file; ie++) {
 		troot->GetEntry(ie);  
 	//=========================================ADC===============================
-        if(ie%1000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;
+        if(ie%1000==0.0&&ie!=0){//cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;
 	}
 		for( int i = 0; i < Nadc ; i++) {//Start ADC-ADJUSTED filling loop
 			
@@ -238,81 +245,6 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
     
 //=======================================Canvases=============================
 
-//Draw TDC and ADC raw data
-    
- 	TCanvas *tdc_canvas = new TCanvas("tdc_canvas","Raw ADC spectra",100,100,600,600);
-   	tdc_canvas->Divide(2,2);
-   	for ( int i = bl; i <= tr ; i++) {
-      			tdc_canvas->cd(i-bl+1);
-				hadcraw[i]->Draw();
-				//hadccut[i]->Draw();
-      			//htdcadjusted[i]->Draw();
-	}
- 	TCanvas *tdca_canvas = new TCanvas("tdca_canvas","Adjusted TDC spectra",112,112,600,600);
-   	tdca_canvas->Divide(2,2);
-   	for ( int i = bl; i <= tr ; i++) {
-      			tdca_canvas->cd(i-bl+1);
-				//hadcraw[i]->Draw();
-				//hadccut[i]->Draw();
-      			htdcadjusted[i]->Draw();
-	}
-
-
-        TCanvas *adc_canvas = new TCanvas("adc_canvas","Corrected ADC spectra",125,125,600,600);
-        adc_canvas->Divide(2,2);
-        for ( int i = 0; i <= 3 ; i++) {
-                		adc_canvas->cd(i+1);
-				//hadcraw[i]->Draw();
-				//hadccut[i]->Draw();                
-				hadcadjusted[i]->Draw();
-        }
-
- 	TCanvas *adcpos = new TCanvas("adcpos","ADC vs xpos",150,150,600,600);
- 
-	adcpos->Divide(2,2);
-	adcpos->cd(1);
-	htopLeftvXpos->Draw("COLZ");
-	adcpos->cd(2);
-	htopRightvXpos->Draw("COLZ");
-	adcpos->cd(3);
-	hbotLeftvXpos->Draw("COLZ");
-	adcpos->cd(4);
-	hbotRightvXpos->Draw("COLZ");
- 	
-	TCanvas *adctheta = new TCanvas("adctheta","ADC vs theta",175,175,600,600);
- 
-	adctheta->Divide(2,2);
-	adctheta->cd(1);
-	htopadctheta->Draw("COLZ");
-	adctheta->cd(2);
-	hbotadctheta->Draw("COLZ");
-	adctheta->cd(3);
-		
- //use a TProfile to convert the 2-d to 1-d problem
- 	TF1 *myLeBronFit = new TF1("myLeBronFit","[0]*(1.0+[1]*cos(x*3.14159/180.0))",-60.0,60.0);
-	TProfile *prof = htopadctheta->ProfileX();
- 	prof->Fit("myLeBronFit","QR");
-	prof->Draw();
-	adctheta->cd(4);
-	TProfile *prof2 = hbotadctheta->ProfileX();
- 	prof2->Fit("myLeBronFit","QR");
-	prof2->Draw();
-    
- 	TCanvas *tdcpos = new TCanvas("tdcpos","X Positions",200,200,600,600);
- 
-	tdcpos->Divide(2,3);
-	gStyle->SetOptFit(1);
-	tdcpos->cd(1);
-	htpos->Draw();
-	tdcpos->cd(2);
-	hbpos->Draw();
-	tdcpos->cd(3);
-	htheta->Draw();
-	htheta2->SetLineColor(kRed);
-	htheta2->Draw("SAME");
-	tdcpos->cd(4);
-	htheta2->Draw();
-
         for (unsigned int jj = 0; jj < htheta->GetNbinsX();jj++) {
             htheta->SetBinError(jj,sqrt(htheta->GetBinContent(jj)));
         }
@@ -322,41 +254,22 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 
         const Int_t nxbins = htheta->GetNbinsX();
         Double_t res[nxbins],x[nxbins];
-        htheta->Chi2Test(htheta2,"UW P",res);
-        Double_t thetabinsize = (thetahigh-thetalow)/nthetabins;
-        for (Int_t iii=0; iii<nxbins; iii++) x[iii]=thetalow+iii*thetabinsize;
-        TGraph *resgr = new TGraph(nxbins,x,res);
-        resgr->GetXaxis()->SetRangeUser(thetalow,thetahigh);
-        resgr->SetMarkerStyle(22);
-        resgr->SetMarkerColor(2);
-        resgr->SetMarkerSize(.2);
-	tdcpos->cd(5);
-        resgr->Draw("APL");
+        chi2array[kkk] = htheta->Chi2Test(htheta2,"UW P CHI2",res);
 
-	tdcpos->cd(6);
-	hmeantime->Fit("gaus");
+	} // End kkk loop!
 
-    	//TF1 *myfit = new TF1("myfit","[0]*pow(cos(x/180.0*3.14159),2)",-60,60);
-    	//myfit->SetParameter(0,140);
-	//htheta->Fit("myfit","QRW");
- 	
-	TCanvas *adctot = new TCanvas("adctot","Top and Bottom ADC Sums",225,225,600,600);
- 
-	adctot->Divide(1,2);
-	gStyle->SetOptFit(1);
-	adctot->cd(1);
-	hadctop->Draw();
-	adctot->cd(2);
-	hadcbot->Draw(); 
-  	
+	cout << "Ended main loop!" << endl;
+	
+	TCanvas *chi2dist = new TCanvas("chi2dist","Chi^2 Distribution",250,250,1000,1000);
+	for (Int_t kkk = 0; kkk < npoints; kkk++){
+		cout << "nscint = " << nscintarray[kkk] << " Chi2 = " << chi2array[kkk] << endl;
+	}
+	
+	chi2dist->cd();
+	TGraph *gr = new TGraph(npoints,nscintarray,chi2array);
+	gr->SetMarkerColor(kBlue);
+        gr->SetMarkerStyle(22);
+	gr->SetMarkerSize(1.0);
+	gr->Draw("APL");
 
-	TCanvas *adcoverlay = new TCanvas("adcoverlay","Top and Bottom ADC Sum Overlays",250,250,600,600);
-	adcoverlay->Divide(1,2);
-	adcoverlay->cd(1);
-	ovhadctop->SetLineColor(kRed);
-	ovhadctop->Draw();
-	ovhadcbot->Draw("SAME");
-
-	adcoverlay->cd(2);
-	hadcoverlay->Draw();
 }
