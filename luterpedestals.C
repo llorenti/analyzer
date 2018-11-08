@@ -19,11 +19,11 @@ const Int_t Ntdc2 = 4;
 //=============================================Method starts here for plotting===================================
 
 void luterpedestals(Int_t nrun) {
-	FILE *f = fopen(Form("/home/jlabdaq/analyzer/pedestalfiles/pedestalrun%d.dat",nrun),"w");	
+	FILE *f = fopen(Form("./pedestalfiles/pedestalrun%d.dat",nrun),"w");	
 	TCanvas *adc_canvas2 = new TCanvas("adc_canvas2","ADC pedestals",50,50,600,600);
         adc_canvas2->Divide(2,2);
-	Char_t *tdcnames[Ntdc]={"Bottom Left","Bottom Right","Top Left","Top Right","4","5","6","7","8","9","10","11","12","13","14","15"};	
-	char *adcnames[Nadc]={"Bottom Left","Bottom Right","Top Left","Top Right","4","5","6","7","8","9","10","11","12","13","14","15"};
+	Char_t tdcnames[][Ntdc]={"Bottom Left","Bottom Right","Top Left","Top Right","4","5","6","7","8","9","10","11","12","13","14","15"};	
+	Char_t adcnames[][Nadc]={"Bottom Left","Bottom Right","Top Left","Top Right","4","5","6","7","8","9","10","11","12","13","14","15"};
 
 //Set correction values
     double adcpedestal[Nadc];

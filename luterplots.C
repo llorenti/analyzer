@@ -36,8 +36,8 @@ void luterplots(Int_t nrun) {
 //create new pedestal values
 
 
-	Char_t *tdcnames[Ntdc]={"Bottom Left","Bottom Right","Top Left","Top Right","4","5","6","7","8","9","10","11","12","13","14","15"};	
-	char *adcnames[Nadc]={"Bottom Left","Bottom Right","Top Left","Top Right","4","5","6","7","8","9","10","11","12","13","14","15"};
+	Char_t tdcnames[][Ntdc]={"Bottom Left","Bottom Right","Top Left","Top Right","4","5","6","7","8","9","10","11","12","13","14","15"};	
+	Char_t adcnames[][Nadc]={"Bottom Left","Bottom Right","Top Left","Top Right","4","5","6","7","8","9","10","11","12","13","14","15"};
 
 
 //Set correction values
@@ -55,6 +55,8 @@ void luterplots(Int_t nrun) {
 	troot->SetBranchAddress("tdc",&tdc);
 	troot->SetBranchAddress("adc",&adc);
 	const int nevents_in_file = (int)troot->GetEntries();
+
+        cout << "Opened rootfile and read in " << nevents_in_file << " events." << endl;
 
 //Create Histograms
 	TH1F *htdcraw[Ntdc], *htdcadjusted[Ntdc], *hadcraw[Nadc], *hadccut[Nadc], *hadcadjusted[Nadc];
@@ -78,6 +80,8 @@ void luterplots(Int_t nrun) {
     TH2F *hbotadctheta = new TH2F("hbotadctheta","corrected bottom ADC vs. theta ",1000,-60.0,60.0,200,0,4500);
 
 
+    cout << "Defined first set of histograms ... " << endl;
+
 	for ( int i = 0; i < Ntdc ; i++) {
 		htdcraw[i] = new TH1F(Form("htdcraw%02d", i),Form("%s   raw tdc",tdcnames[i]),bin,1700,2100);
         	htdcadjusted[i] = new TH1F(Form("htdcadjusted%02d", i),Form("%s   adjusted tdc",tdcnames[i]),bin,1500,2500);
@@ -89,16 +93,22 @@ void luterplots(Int_t nrun) {
         	hadcadjusted[i] = new TH1F(Form("hadcadjusted%02d", i),Form("%s   adjusted adc",adcnames[i]),bin,0,5500);
         }
     
+    cout << "Defined second set of histograms ... " << endl;
 	
 //=====================================GET PED for ADC==========================
-	if(remakepedfile){gROOT->ProcessLine(Form(".x luterpedestals.C(%d)",pedrun));cout<<"pedestal file made"<<endl;}
-	FILE *adcpeds = fopen(Form("/home/jlabdaq/analyzer/pedestalfiles/pedestalrun%d.dat",pedrun),"r");
-	for( int i = 0; i < Nadc ; i++) {//Start ADC filling loop
+	if(remakepedfile){cout << "Executing luterpedestals.C" << endl; gROOT->ProcessLine(Form(".x luterpedestals.C(%d)",pedrun));cout<<"pedestal file made"<<endl;}
+	cout << "Opening pedestal values file ... " << endl;
+        FILE *adcpeds = fopen(Form("./pedestalfiles/pedestalrun%d.dat",pedrun),"r");
+	cout << "Filling ADC pedestal array ..." << endl;
+        for( int i = 0; i < Nadc ; i++) {//Start ADC filling loop
 		fscanf(adcpeds,"%lf\n",&ped[i]);
 		printf("%lf\n",ped[i]);
 	}
 
+        cout << "Read in pedestal file ... " << endl;
+
 //=====================================GET ADJ FACTORS for ADC&TDC==========================
+    cout << "Starting adc and tdc calibration loop ... " << endl;
     for (int ie = 0; ie < nevents_in_file; ie++) {
 		troot->GetEntry(ie);
 		if(ie%130000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;}
