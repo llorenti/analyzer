@@ -23,9 +23,10 @@ const Double_t thetahigh = 100.5;
 
 //=============================================Method starts here for plotting===================================
 
-void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
+void luterplots(Int_t nrun, Double_t nscint=1.50) {
 
         Double_t vn = 2.997E08/nscint;
+	Double_t resolution = 0.0232*nscint*nscint-0.1061*nscint+0.1617;
         Double_t granularity = t_convert*vn/2.0;
         Double_t xpos_range = 0.30;
         Double_t dscint = 0.105; // distance between scintillators in metres
@@ -57,7 +58,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
 	troot->SetBranchAddress("adc",&adc);
 	const int nevents_in_file = (int)troot->GetEntries();
 
-        cout << "Opened rootfile and read in " << nevents_in_file << " events." << endl;
+        //cout << "Opened rootfile and read in " << nevents_in_file << " events." << endl;
 
 //Create Histograms
 	TH1F *htdcraw[Ntdc], *htdcadjusted[Ntdc], *hadcraw[Nadc], *hadccut[Nadc], *hadcadjusted[Nadc];
@@ -65,6 +66,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
 	TH1F *hbpos = new TH1F("hbpos","Bottom Position",xposbin,-1.0*xpos_range,xpos_range); //Histogram for bottom scintillator 
 	//htheta = new TH1F("htheta","Angle (Degrees)",10*bin,-100.5,100.5); //Histogram for incidence angle
 	TH1F *htheta = new TH1F("htheta","Angle (Degrees)",nthetabins,thetalow,thetahigh); //Histogram for incidence angle
+	TH1F *hmeantime = new TH1F("hmeantime","Mean Time (ns)",100,-0.5,0.5); //Histogram for mean top/bottom time
 	TH1F *htheta2 = new TH1F("htheta2","Angle (Degrees)",nthetabins,thetalow,thetahigh); //Histogram for simulated incidence angle
 	TH1F *hadctop = new TH1F("hadctop","Top Energy Dep",bin,0,8500);
 	TH1F *hadcbot = new TH1F("hadcbot","Bottom Energy Dep",bin,0,8500);
@@ -81,7 +83,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
     TH2F *hbotadctheta = new TH2F("hbotadctheta","corrected bottom ADC vs. theta ",1000,-60.0,60.0,200,0,4500);
 
 
-    cout << "Defined first set of histograms ... " << endl;
+    //cout << "Defined first set of histograms ... " << endl;
 
 	for ( int i = 0; i < Ntdc ; i++) {
 		htdcraw[i] = new TH1F(Form("htdcraw%02d", i),Form("%s   raw tdc",tdcnames[i]),bin,1700,2100);
@@ -94,25 +96,26 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
         	hadcadjusted[i] = new TH1F(Form("hadcadjusted%02d", i),Form("%s   adjusted adc",adcnames[i]),bin,0,5500);
         }
     
-    cout << "Defined second set of histograms ... " << endl;
+    //cout << "Defined second set of histograms ... " << endl;
 	
 //=====================================GET PED for ADC==========================
 	if(remakepedfile){cout << "Executing luterpedestals.C" << endl; gROOT->ProcessLine(Form(".x luterpedestals.C(%d)",pedrun));cout<<"pedestal file made"<<endl;}
-	cout << "Opening pedestal values file ... " << endl;
+	//cout << "Opening pedestal values file ... " << endl;
         FILE *adcpeds = fopen(Form("./pedestalfiles/pedestalrun%d.dat",pedrun),"r");
-	cout << "Filling ADC pedestal array ..." << endl;
+	//cout << "Filling ADC pedestal array ..." << endl;
         for( int i = 0; i < Nadc ; i++) {//Start ADC filling loop
 		fscanf(adcpeds,"%lf\n",&ped[i]);
-		printf("%lf\n",ped[i]);
+		//printf("%lf\n",ped[i]);
 	}
 
-        cout << "Read in pedestal file ... " << endl;
+        //cout << "Read in pedestal file ... " << endl;
 
 //=====================================GET ADJ FACTORS for ADC&TDC==========================
-    cout << "Starting adc and tdc calibration loop ... " << endl;
+    //cout << "Starting adc and tdc calibration loop ... " << endl;
     for (int ie = 0; ie < nevents_in_file; ie++) {
 		troot->GetEntry(ie);
-		if(ie%1000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;}
+		if(ie%1000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;
+		}
 		for( int i = 0; i < Ntdc ; i++) {//Start TDC filling loop
                        if(adc[i] < 3600){
             		htdcraw[i]->Fill(tdc[i]);
@@ -150,7 +153,8 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
 	for (int ie = 0; ie < nevents_in_file; ie++) {
 		troot->GetEntry(ie);  
 	//=========================================ADC===============================
-        if(ie%1000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;}
+        if(ie%1000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;
+	}
 		for( int i = 0; i < Nadc ; i++) {//Start ADC-ADJUSTED filling loop
 			
 				gain[i]=adjadcto/(hadccut[i]->GetMean());
@@ -190,6 +194,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
 			Double_t rtod = 180.0/3.14159265;
 			Double_t tdiff = (ttl-ttr)/2.0;
 			Double_t bdiff = (tbl-tbr)/2.0;
+		        Double_t xmeantime = ((ttl+ttr)/2.0-(tbl+tbr)/2.0)*t_convert*vn;	
 			Double_t xtop = tdiff*t_convert*vn;
 			Double_t xbottom = bdiff*t_convert*vn;
 			rnd = r.Gaus(0.0,1.5);
@@ -225,6 +230,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
 			ovhadcbot->Fill((ebl+ebr)/2.0);			
 
 			hadcoverlay->Fill((etl+etr)/(ebl+ebr));
+			hmeantime->Fill(xmeantime);
                     }
 
 	} //End of loop over events
@@ -294,7 +300,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
     
  	TCanvas *tdcpos = new TCanvas("tdcpos","X Positions",200,200,600,600);
  
-	tdcpos->Divide(2,2);
+	tdcpos->Divide(2,3);
 	gStyle->SetOptFit(1);
 	tdcpos->cd(1);
 	htpos->Draw();
@@ -304,6 +310,8 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
 	htheta->Draw();
 	htheta2->SetLineColor(kRed);
 	htheta2->Draw("SAME");
+	tdcpos->cd(4);
+	htheta2->Draw();
 
         for (unsigned int jj = 0; jj < htheta->GetNbinsX();jj++) {
             htheta->SetBinError(jj,sqrt(htheta->GetBinContent(jj)));
@@ -322,8 +330,11 @@ void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
         resgr->SetMarkerStyle(22);
         resgr->SetMarkerColor(2);
         resgr->SetMarkerSize(.2);
-	tdcpos->cd(4);
+	tdcpos->cd(5);
         resgr->Draw("APL");
+
+	tdcpos->cd(6);
+	hmeantime->Fit("gaus");
 
     	//TF1 *myfit = new TF1("myfit","[0]*pow(cos(x/180.0*3.14159),2)",-60,60);
     	//myfit->SetParameter(0,140);
