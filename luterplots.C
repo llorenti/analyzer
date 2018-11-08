@@ -14,7 +14,7 @@ const Int_t br=Ntdc-16+1;
 const Int_t tl=Ntdc-16+2;
 const Int_t tr=Ntdc-16+3;
 const Double_t adjadcto=1500.0;//value to ADJust ADC TO
-Double_t nscint = 1.30; // index of refraction of scintillator
+Double_t nscint = 1.50; // index of refraction of scintillator
 Double_t vn = 2.997E08/nscint;
 Double_t dscint = 0.105; // distance between scintillators in metres
 Double_t t_fullscale = 140.0E-09; // full scale TDC range in seconds
@@ -111,7 +111,7 @@ void luterplots(Int_t nrun) {
     cout << "Starting adc and tdc calibration loop ... " << endl;
     for (int ie = 0; ie < nevents_in_file; ie++) {
 		troot->GetEntry(ie);
-		if(ie%130000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;}
+		if(ie%1000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;}
 		for( int i = 0; i < Ntdc ; i++) {//Start TDC filling loop
                        if(adc[i] < 3600){
             		htdcraw[i]->Fill(tdc[i]);
@@ -149,7 +149,7 @@ void luterplots(Int_t nrun) {
 	for (int ie = 0; ie < nevents_in_file; ie++) {
 		troot->GetEntry(ie);  
 	//=========================================ADC===============================
-        if(ie%130000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;}
+        if(ie%1000==0.0&&ie!=0){cout<<"Progress: "<<((double)ie)/((double)nevents_in_file)*100<<"%"<<endl;}
 		for( int i = 0; i < Nadc ; i++) {//Start ADC-ADJUSTED filling loop
 			
 				gain[i]=adjadcto/(hadccut[i]->GetMean());
@@ -175,7 +175,14 @@ void luterplots(Int_t nrun) {
 				}
 			}//End TDC for loop
 
-			Double_t tbl = tdc[bl]+tdccorrect[bl];
+                        Bool_t good_bl = (abs(tdc[bl]+tdccorrect[bl]-2000)<200.0);
+                        Bool_t good_br = (abs(tdc[br]+tdccorrect[br]-2000)<200.0);
+                        Bool_t good_tl = (abs(tdc[tl]+tdccorrect[tl]-2000)<200.0);
+                        Bool_t good_tr = (abs(tdc[tr]+tdccorrect[tr]-2000)<200.0);
+                        Bool_t good_event = good_bl&&good_br&&good_tl&&good_tr;
+
+		    if (good_event){
+                        Double_t tbl = tdc[bl]+tdccorrect[bl];
 			Double_t tbr = tdc[br]+tdccorrect[br];
 			Double_t ttl = tdc[tl]+tdccorrect[tl];
 			Double_t ttr = tdc[tr]+tdccorrect[tr];
@@ -185,8 +192,8 @@ void luterplots(Int_t nrun) {
 			Double_t xtop = tdiff*t_convert*vn;
 			Double_t xbottom = bdiff*t_convert*vn;
 			rnd = r.Gaus(0.0,1.5);
-			Double_t rnd_top_pos = r.Gaus(0.0,0.07);
-			Double_t rnd_bottom_pos = r.Gaus(0.0,0.07);
+			Double_t rnd_top_pos = r.Gaus(0.0,0.05);
+			Double_t rnd_bottom_pos = r.Gaus(0.0,0.05);
 			Double_t rnd2 = r.Gaus(0.0,0.0);
 			Double_t rndxt = r.Uniform(-0.10,0.10);
 			Double_t rndyt = r.Uniform(-0.15,0.15);
@@ -197,7 +204,7 @@ void luterplots(Int_t nrun) {
 			Double_t theta = rtod*atan((xbottom-xtop)/dscint)+rnd;
 			Double_t theta2 = rtod*atan((rndrb-rndrt)/dscint);
 
-			if(xtop > -0.2 && xtop < 0.2 && xbottom > -0.2 && xbottom < 0.2) {
+			if(xtop > -0.4 && xtop < 0.4 && xbottom > -0.4 && xbottom < 0.4) {
 				htpos->Fill(xtop);
 				hbpos->Fill(xbottom);
 		    		if(abs(theta)<=85.0) htheta->Fill(theta);
@@ -218,6 +225,7 @@ void luterplots(Int_t nrun) {
 			ovhadcbot->Fill((ebl+ebr)/2.0);			
 
 			hadcoverlay->Fill((etl+etr)/(ebl+ebr));
+                    }
 
 	} //End of loop over events
 	
@@ -226,7 +234,7 @@ void luterplots(Int_t nrun) {
 
 //Draw TDC and ADC raw data
     
- 	TCanvas *tdc_canvas = new TCanvas("tdc_canvas","TDC spectra",100,100,600,600);
+ 	TCanvas *tdc_canvas = new TCanvas("tdc_canvas","Raw ADC spectra",100,100,600,600);
    	tdc_canvas->Divide(2,2);
    	for ( int i = bl; i <= tr ; i++) {
       			tdc_canvas->cd(i-bl+1);
@@ -234,8 +242,17 @@ void luterplots(Int_t nrun) {
 				//hadccut[i]->Draw();
       			//htdcadjusted[i]->Draw();
 	}
+ 	TCanvas *tdca_canvas = new TCanvas("tdca_canvas","Adjusted TDC spectra",112,112,600,600);
+   	tdca_canvas->Divide(2,2);
+   	for ( int i = bl; i <= tr ; i++) {
+      			tdca_canvas->cd(i-bl+1);
+				//hadcraw[i]->Draw();
+				//hadccut[i]->Draw();
+      			htdcadjusted[i]->Draw();
+	}
 
-        TCanvas *adc_canvas = new TCanvas("adc_canvas","ADC spectra",125,125,600,600);
+
+        TCanvas *adc_canvas = new TCanvas("adc_canvas","Corrected ADC spectra",125,125,600,600);
         adc_canvas->Divide(2,2);
         for ( int i = 0; i <= 3 ; i++) {
                 		adc_canvas->cd(i+1);
