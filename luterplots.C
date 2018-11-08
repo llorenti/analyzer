@@ -14,21 +14,22 @@ const Int_t br=Ntdc-16+1;
 const Int_t tl=Ntdc-16+2;
 const Int_t tr=Ntdc-16+3;
 const Double_t adjadcto=1500.0;//value to ADJust ADC TO
-Double_t nscint = 1.50; // index of refraction of scintillator
-Double_t vn = 2.997E08/nscint;
-Double_t dscint = 0.105; // distance between scintillators in metres
 Double_t t_fullscale = 140.0E-09; // full scale TDC range in seconds
 Double_t t_convert=t_fullscale/4096.0;
-Double_t granularity = t_convert*vn/2.0;
-Double_t xpos_range = 0.30;
-const int xposbin = 2.0*xpos_range/granularity;
 
-
+const Int_t nthetabins = 51;
+const Double_t thetalow = -100.5;
+const Double_t thetahigh = 100.5;
 
 //=============================================Method starts here for plotting===================================
 
-void luterplots(Int_t nrun) {
+void luterplots(Int_t nrun, Double_t nscint=1.50, Double_t resolution=0.05) {
 
+        Double_t vn = 2.997E08/nscint;
+        Double_t granularity = t_convert*vn/2.0;
+        Double_t xpos_range = 0.30;
+        Double_t dscint = 0.105; // distance between scintillators in metres
+        const int xposbin = 2.0*xpos_range/granularity;
 
 	TRandom r;
 	Double_t rnd;
@@ -63,8 +64,8 @@ void luterplots(Int_t nrun) {
 	TH1F *htpos = new TH1F("htpos","Top Position",xposbin,-1.0*xpos_range,xpos_range); //Histogram for top scintillator
 	TH1F *hbpos = new TH1F("hbpos","Bottom Position",xposbin,-1.0*xpos_range,xpos_range); //Histogram for bottom scintillator 
 	//htheta = new TH1F("htheta","Angle (Degrees)",10*bin,-100.5,100.5); //Histogram for incidence angle
-	TH1F *htheta = new TH1F("htheta","Angle (Degrees)",201,-100.5,100.5); //Histogram for incidence angle
-	TH1F *htheta2 = new TH1F("htheta2","Angle (Degrees)",201,-100.5,100.5); //Histogram for simulated incidence angle
+	TH1F *htheta = new TH1F("htheta","Angle (Degrees)",nthetabins,thetalow,thetahigh); //Histogram for incidence angle
+	TH1F *htheta2 = new TH1F("htheta2","Angle (Degrees)",nthetabins,thetalow,thetahigh); //Histogram for simulated incidence angle
 	TH1F *hadctop = new TH1F("hadctop","Top Energy Dep",bin,0,8500);
 	TH1F *hadcbot = new TH1F("hadcbot","Bottom Energy Dep",bin,0,8500);
 
@@ -192,9 +193,8 @@ void luterplots(Int_t nrun) {
 			Double_t xtop = tdiff*t_convert*vn;
 			Double_t xbottom = bdiff*t_convert*vn;
 			rnd = r.Gaus(0.0,1.5);
-			Double_t rnd_top_pos = r.Gaus(0.0,0.05);
-			Double_t rnd_bottom_pos = r.Gaus(0.0,0.05);
-			Double_t rnd2 = r.Gaus(0.0,0.0);
+			Double_t rnd_top_pos = r.Gaus(0.0,resolution);
+			Double_t rnd_bottom_pos = r.Gaus(0.0,resolution);
 			Double_t rndxt = r.Uniform(-0.10,0.10);
 			Double_t rndyt = r.Uniform(-0.15,0.15);
 			Double_t rndrt = sqrt(rndxt*rndxt+rndyt*rndyt)+rnd_top_pos;
@@ -294,7 +294,7 @@ void luterplots(Int_t nrun) {
     
  	TCanvas *tdcpos = new TCanvas("tdcpos","X Positions",200,200,600,600);
  
-	tdcpos->Divide(1,3);
+	tdcpos->Divide(2,2);
 	gStyle->SetOptFit(1);
 	tdcpos->cd(1);
 	htpos->Draw();
@@ -304,6 +304,27 @@ void luterplots(Int_t nrun) {
 	htheta->Draw();
 	htheta2->SetLineColor(kRed);
 	htheta2->Draw("SAME");
+
+        for (unsigned int jj = 0; jj < htheta->GetNbinsX();jj++) {
+            htheta->SetBinError(jj,sqrt(htheta->GetBinContent(jj)));
+        }
+        for (unsigned int jj = 0; jj < htheta2->GetNbinsX();jj++) {
+            htheta2->SetBinError(jj,sqrt(htheta2->GetBinContent(jj)));
+        }
+
+        const Int_t nxbins = htheta->GetNbinsX();
+        Double_t res[nxbins],x[nxbins];
+        htheta->Chi2Test(htheta2,"UW P",res);
+        Double_t thetabinsize = (thetahigh-thetalow)/nthetabins;
+        for (Int_t iii=0; iii<nxbins; iii++) x[iii]=thetalow+iii*thetabinsize;
+        TGraph *resgr = new TGraph(nxbins,x,res);
+        resgr->GetXaxis()->SetRangeUser(thetalow,thetahigh);
+        resgr->SetMarkerStyle(22);
+        resgr->SetMarkerColor(2);
+        resgr->SetMarkerSize(.2);
+	tdcpos->cd(4);
+        resgr->Draw("APL");
+
     	//TF1 *myfit = new TF1("myfit","[0]*pow(cos(x/180.0*3.14159),2)",-60,60);
     	//myfit->SetParameter(0,140);
 	//htheta->Fit("myfit","QRW");
