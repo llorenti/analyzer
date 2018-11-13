@@ -25,15 +25,16 @@ const Double_t thetahigh = 100.5;
 
 void luterplotsloop(Int_t nrun) {
 
-	const Int_t npoints = 100;
+	const Int_t npoints = 18;
 	Double_t chi2array[npoints];
 	Double_t nscintarray[npoints];
 
 	for (Int_t kkk = 0; kkk < npoints; kkk++){
-        Double_t nscint = 1.40+kkk*0.20/(npoints-1);
+        Double_t nscint = 1.30+kkk*0.90/(npoints-1);
 	nscintarray[kkk]=nscint;
         Double_t vn = 2.997E08/nscint;
 	Double_t resolution = 0.0232*nscint*nscint-0.1061*nscint+0.1617;
+        resolution = resolution*0.934;
         Double_t granularity = t_convert*vn/2.0;
         Double_t xpos_range = 0.30;
         Double_t dscint = 0.105; // distance between scintillators in metres
@@ -187,10 +188,10 @@ void luterplotsloop(Int_t nrun) {
 				}
 			}//End TDC for loop
 
-                        Bool_t good_bl = (abs(tdc[bl]+tdccorrect[bl]-2000)<200.0);
-                        Bool_t good_br = (abs(tdc[br]+tdccorrect[br]-2000)<200.0);
-                        Bool_t good_tl = (abs(tdc[tl]+tdccorrect[tl]-2000)<200.0);
-                        Bool_t good_tr = (abs(tdc[tr]+tdccorrect[tr]-2000)<200.0);
+                        Bool_t good_bl = (abs(tdc[bl]+tdccorrect[bl]-2000)<50.0);
+                        Bool_t good_br = (abs(tdc[br]+tdccorrect[br]-2000)<50.0);
+                        Bool_t good_tl = (abs(tdc[tl]+tdccorrect[tl]-2000)<50.0);
+                        Bool_t good_tr = (abs(tdc[tr]+tdccorrect[tr]-2000)<50.0);
                         Bool_t good_event = good_bl&&good_br&&good_tl&&good_tr;
 
 		    if (good_event){
@@ -207,11 +208,23 @@ void luterplotsloop(Int_t nrun) {
 			rnd = r.Gaus(0.0,1.5);
 			Double_t rnd_top_pos = r.Gaus(0.0,resolution);
 			Double_t rnd_bottom_pos = r.Gaus(0.0,resolution);
-			Double_t rndxt = r.Uniform(-0.10,0.10);
-			Double_t rndyt = r.Uniform(-0.15,0.15);
-			Double_t rndrt = sqrt(rndxt*rndxt+rndyt*rndyt)+rnd_top_pos;
-			Double_t rndxb = r.Uniform(-0.10,0.10);
-			Double_t rndyb = r.Uniform(-0.15,0.15);
+                        TF1 *fphi = new TF1("fsin", "x", 0, 2*TMath::Pi());
+                        TF1 *fcos = new TF1("fcos", "cos(x)*cos(x)",-TMath::Pi()/2.0,TMath::Pi()/2.0);
+                        Double_t phisim, cossim, rndxt, rndyt, rndrt, rndrr, rndxb, rndyb;
+                        while (true) {
+                            phisim = fphi->GetRandom();
+                            cossim = fcos->GetRandom();
+                            rndxt = r.Uniform(-0.10,0.10);
+                            rndyt = r.Uniform(-0.15,0.15);
+                            rndrt = sqrt(rndxt*rndxt+rndyt*rndyt)+rnd_top_pos;
+                            rndrr = dscint*tan(cossim);
+                            rndxb = rndxt+rndrr*cos(phisim);
+                            rndyb = rndyt+rndrr*sin(phisim);
+                            if (rndxb > -0.10 && rndxb < 0.10 && rndyb > -0.15 && rndyb < 0.15) break;
+                        }
+
+			//Double_t rndxb = r.Uniform(-0.10,0.10);
+			//Double_t rndyb = r.Uniform(-0.15,0.15);
 			Double_t rndrb = sqrt(rndxb*rndxb+rndyb*rndyb)+rnd_bottom_pos;
 			Double_t theta = rtod*atan((xbottom-xtop)/dscint)+rnd;
 			Double_t theta2 = rtod*atan((rndrb-rndrt)/dscint);

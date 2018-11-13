@@ -13,7 +13,7 @@ const Int_t bl=Ntdc-16+0;//Start at channel 0
 const Int_t br=Ntdc-16+1;
 const Int_t tl=Ntdc-16+2;
 const Int_t tr=Ntdc-16+3;
-const Double_t adjadcto=1500.0;//value to ADJust ADC TO
+const Double_t adjadcto=1400.0;//value to ADJust ADC TO
 Double_t t_fullscale = 140.0E-09; // full scale TDC range in seconds
 Double_t t_convert=t_fullscale/4096.0;
 
@@ -27,6 +27,8 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 
         Double_t vn = 2.997E08/nscint;
 	Double_t resolution = 0.0232*nscint*nscint-0.1061*nscint+0.1617;
+        resolution = resolution*0.934;
+        cout << "Resolution = " << resolution << endl;
         Double_t granularity = t_convert*vn/2.0;
         Double_t xpos_range = 0.30;
         Double_t dscint = 0.105; // distance between scintillators in metres
@@ -66,7 +68,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 	TH1F *hbpos = new TH1F("hbpos","Bottom Position",xposbin,-1.0*xpos_range,xpos_range); //Histogram for bottom scintillator 
 	//htheta = new TH1F("htheta","Angle (Degrees)",10*bin,-100.5,100.5); //Histogram for incidence angle
 	TH1F *htheta = new TH1F("htheta","Angle (Degrees)",nthetabins,thetalow,thetahigh); //Histogram for incidence angle
-	TH1F *hmeantime = new TH1F("hmeantime","Mean Time (ns)",100,-0.5,0.5); //Histogram for mean top/bottom time
+	TH1F *hmeantime = new TH1F("hmeantime","Mean Position (m)",100,-0.5,0.5); //Histogram for mean top/bottom time
 	TH1F *htheta2 = new TH1F("htheta2","Angle (Degrees)",nthetabins,thetalow,thetahigh); //Histogram for simulated incidence angle
 	TH1F *hadctop = new TH1F("hadctop","Top Energy Dep",bin,0,8500);
 	TH1F *hadcbot = new TH1F("hadcbot","Bottom Energy Dep",bin,0,8500);
@@ -75,13 +77,19 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 	TH1F *ovhadcbot = new TH1F("ovhadcbot", "Energy Deposits", bin, 0, 8500);
 
 	TH1F *hadcoverlay = new TH1F("hadcoverlay","Top vs Bottom",bin,0,3);
-    TH2F *htopLeftvXpos = new TH2F("htopLeftvXpos","corrected top left paddle ADC vs. xpos top ",100,-0.30,0.30,50,500,2500);
-    TH2F *htopRightvXpos = new TH2F("htopRightvXpos","corrected top right paddle ADC vs. xpos top ",100,-0.30,0.30,50,500,2500);
-    TH2F *hbotLeftvXpos = new TH2F("hbotLeftvXpos","corrected bottom left paddle ADC vs. xpos bottom ",100,-0.30,0.30,50,500,2500);
-    TH2F *hbotRightvXpos = new TH2F("hbotRightvXpos","corrected bottom right paddle ADC vs. xpos bottom ",100,-0.30,0.30,50,500,2500);
+    TH2F *htopLeftvXpos = new TH2F("htopLeftvXpos","corrected top left paddle ADC vs. xpos top ",100,-0.30,0.30,50,0,2500);
+    TH2F *htopRightvXpos = new TH2F("htopRightvXpos","corrected top right paddle ADC vs. xpos top ",100,-0.30,0.30,50,0,2500);
+    TH2F *hbotLeftvXpos = new TH2F("hbotLeftvXpos","corrected bottom left paddle ADC vs. xpos bottom ",100,-0.30,0.30,50,0,2500);
+    TH2F *hbotRightvXpos = new TH2F("hbotRightvXpos","corrected bottom right paddle ADC vs. xpos bottom ",100,-0.30,0.30,50,0,2500);
     TH2F *htopadctheta = new TH2F("htopadctheta","corrected top ADC vs. theta ",1000,-60.0,60.0,200,0,4500);
     TH2F *hbotadctheta = new TH2F("hbotadctheta","corrected bottom ADC vs. theta ",1000,-60.0,60.0,200,0,4500);
 
+    TH2F *httlxtop = new TH2F("httlxtop","Corrected Top Left Time vs. xtop",100,-0.30,0.30,100,1900,2100);
+    TH2F *htblxtop = new TH2F("htblxtop","Corrected Bottom Left Time vs. xtop",100,-0.30,0.30,100,1900,2100);
+    TH2F *htbrxtop = new TH2F("htbrxtop","Corrected Bottom Right Time vs. xtop",100,-0.30,0.30,100,1900,2100);
+    TH2F *httlxbot = new TH2F("httlxbot","Corrected Top Left Time vs. xbottom",100,-0.30,0.30,100,1900,2100);
+    TH2F *htblxbot = new TH2F("htblxbot","Corrected Bottom Left Time vs. xbottom",100,-0.30,0.30,100,1900,2100);
+    TH2F *htbrxbot = new TH2F("htbrxbot","Corrected Bottom Right Time vs. xbottom",100,-0.30,0.30,100,1900,2100);
 
     //cout << "Defined first set of histograms ... " << endl;
 
@@ -180,10 +188,10 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 				}
 			}//End TDC for loop
 
-                        Bool_t good_bl = (abs(tdc[bl]+tdccorrect[bl]-2000)<200.0);
-                        Bool_t good_br = (abs(tdc[br]+tdccorrect[br]-2000)<200.0);
-                        Bool_t good_tl = (abs(tdc[tl]+tdccorrect[tl]-2000)<200.0);
-                        Bool_t good_tr = (abs(tdc[tr]+tdccorrect[tr]-2000)<200.0);
+                        Bool_t good_bl = (abs(tdc[bl]+tdccorrect[bl]-2000)<50.0);
+                        Bool_t good_br = (abs(tdc[br]+tdccorrect[br]-2000)<50.0);
+                        Bool_t good_tl = (abs(tdc[tl]+tdccorrect[tl]-2000)<50.0);
+                        Bool_t good_tr = (abs(tdc[tr]+tdccorrect[tr]-2000)<50.0);
                         Bool_t good_event = good_bl&&good_br&&good_tl&&good_tr;
 
 		    if (good_event){
@@ -200,17 +208,35 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 			rnd = r.Gaus(0.0,1.5);
 			Double_t rnd_top_pos = r.Gaus(0.0,resolution);
 			Double_t rnd_bottom_pos = r.Gaus(0.0,resolution);
-			Double_t rndxt = r.Uniform(-0.10,0.10);
-			Double_t rndyt = r.Uniform(-0.15,0.15);
-			Double_t rndrt = sqrt(rndxt*rndxt+rndyt*rndyt)+rnd_top_pos;
-			Double_t rndxb = r.Uniform(-0.10,0.10);
-			Double_t rndyb = r.Uniform(-0.15,0.15);
-			Double_t rndrb = sqrt(rndxb*rndxb+rndyb*rndyb)+rnd_bottom_pos;
+                        TF1 *fphi = new TF1("fsin", "x", 0, 2*TMath::Pi());
+                        TF1 *fcos = new TF1("fcos", "cos(x)*cos(x)",-TMath::Pi()/2.0,TMath::Pi()/2.0);
+                        Double_t phisim, cossim, rndxt, rndyt, rndrt, rndrr, rndxb, rndyb;
+                        while (true) {
+                            phisim = fphi->GetRandom();
+                            cossim = fcos->GetRandom();
+                            rndxt = r.Uniform(-0.10,0.10);
+                            rndyt = r.Uniform(-0.15,0.15);
+                            rndrt = sqrt(rndxt*rndxt+rndyt*rndyt)+rnd_top_pos;
+                            rndrr = dscint*tan(cossim);
+                            rndxb = rndxt+rndrr*cos(phisim);
+                            rndyb = rndyt+rndrr*sin(phisim);
+                            if (rndxb > -0.10 && rndxb < 0.10 && rndyb > -0.15 && rndyb < 0.15) break;
+                        }
+
+			//Double_t rndxb = r.Uniform(-0.10,0.10);
+			//Double_t rndyb = r.Uniform(-0.15,0.15);
+                        Double_t rndrb = sqrt(rndxb*rndxb+rndyb*rndyb)+rnd_bottom_pos;
 			Double_t theta = rtod*atan((xbottom-xtop)/dscint)+rnd;
-			Double_t theta2 = rtod*atan((rndrb-rndrt)/dscint);
+                        Double_t theta2 = 0.8281-rtod*atan((rndrt-rndrb)/dscint);
 
 			if(xtop > -0.4 && xtop < 0.4 && xbottom > -0.4 && xbottom < 0.4) {
-				htpos->Fill(xtop);
+			        httlxtop->Fill(xtop,ttl);
+			        htblxtop->Fill(xtop,tbl);
+			        htbrxtop->Fill(xtop,tbr);
+			        httlxbot->Fill(xbottom,ttl);
+			        htblxbot->Fill(xbottom,tbl);
+			        htbrxbot->Fill(xbottom,tbr);
+                                htpos->Fill(xtop);
 				hbpos->Fill(xbottom);
 		    		if(abs(theta)<=85.0) htheta->Fill(theta);
 		    		if(abs(theta2)<=85.0) htheta2->Fill(theta2);
@@ -311,7 +337,7 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 	htheta2->SetLineColor(kRed);
 	htheta2->Draw("SAME");
 	tdcpos->cd(4);
-	htheta2->Draw();
+	htheta->Draw();
 
         for (unsigned int jj = 0; jj < htheta->GetNbinsX();jj++) {
             htheta->SetBinError(jj,sqrt(htheta->GetBinContent(jj)));
@@ -359,4 +385,19 @@ void luterplots(Int_t nrun, Double_t nscint=1.50) {
 
 	adcoverlay->cd(2);
 	hadcoverlay->Draw();
+	
+        TCanvas *tdcposcorr = new TCanvas("tdcposcorr","Top and Bottom Times vs. X Positions",300,300,600,600);
+	tdcposcorr->Divide(2,3);
+	tdcposcorr->cd(1);
+	httlxtop->Draw("COLZ");
+	tdcposcorr->cd(2);
+	httlxbot->Draw("COLZ");
+	tdcposcorr->cd(3);
+	htblxtop->Draw("COLZ");
+	tdcposcorr->cd(4);
+	htblxbot->Draw("COLZ");
+	tdcposcorr->cd(5);
+	htbrxtop->Draw("COLZ");
+	tdcposcorr->cd(6);
+	htbrxbot->Draw("COLZ");
 }
