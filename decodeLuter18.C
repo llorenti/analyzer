@@ -74,31 +74,31 @@ void decodeLuter18(int run)
 	  }//TONY: for our setup index==1 at this point
 	size = (0x00001f00&buffer[index])>>8;//TONY must be 1f to get full size
 //	size = (0xf000&buffer[index+1])>>8  ;
-	//if(evcount<20){cout<<" Index = " << index << "  Size :"<<size<<endl;}
+	if(evcount<20){cout<<" Index = " << index << "  Size :"<<size<<endl;}
 	 // decode the channels read 
 	 for ( int i = 0 ; i < size ; i++)
 	   {
 	     chan=(((buffer[i+index+offset])&0x1e0000)>>17);
 	     val=((buffer[i+index+offset])&0x0fff);
 	     // val=((buffer[i+index+offset])&0x1fff);//TONY this pulls overflowbit
-	     //if(evcount<20){cout<< i << " " << offset << " " << evcount<<" "<<chan<<" "<<val<<endl;}
+	     if(evcount<20){cout<< i << " " << offset << " " << evcount<<" "<<chan<<" "<<val<<endl;}
 	     adc[chan]=val;
 	   }
 	index++;//TONY: increment index past fa001000 for qdc 	
 	 while (index<nevt && ((buffer[index]&0xff000000)!=0xfa000000)) //this moves index to word count for tdc
           {
             index++;//look for header of the tdc
-	    //if (evcount <=10){cout<<dec<<index<<"l2 "<<hex<<buffer[index]<<" "<<buffer[index+1]<<endl;}
+	    if (evcount <=20){cout<<dec<<index<<"l2 "<<hex<<buffer[index]<<" "<<buffer[index+1]<<endl;}
           }
-	    //if (evcount <=10){cout<<dec<<index<<" "<<hex<<buffer[index]<<" "<<buffer[index+1]<<endl;}
+	    if (evcount <=20){cout<<dec<<index<<" "<<hex<<buffer[index]<<" "<<buffer[index+1]<<endl;}
 	size = (0x00001f00&buffer[index])>>8;
 //   	size = buffer[index+1] -2 ;
-	//if (evcount <= 50 && size>0){cout<<"TDC size: "<< size<<endl;}
+	if (evcount <= 20 && size>0){cout<<"TDC size: "<< size<<endl;}
  // decode the tdc channels read 
    	for ( int i = 0 ; i < size ; i++){
 	     		chan=(((buffer[i+index+offset])&0x1e0000)>>17);
 	     		val=((buffer[i+index+offset])&0xfff);
-	     		//if (evcount <= 50){cout<<"TDC chan: "<< chan<<"     TDC value: "<<val<<endl;}
+	     		if (evcount <= 20){cout<<"TDC chan: "<< chan<<"     TDC value: "<<val<<endl;}
 	     		tdc[chan]=val;
      	}		
 
